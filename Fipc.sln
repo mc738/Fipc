@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fipc.Core", "Fipc.Core\Fipc.Core.fsproj", "{BD9CC563-5D53-449A-9258-B4D940983ADB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fipc.ExampleServer", "Fipc.ExampleServer\Fipc.ExampleServer.fsproj", "{59AB7B77-52D6-4806-B265-5C6339D8D3A1}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fipc.ExampleClient", "Fipc.ExampleClient\Fipc.ExampleClient.fsproj", "{DE429EAF-B833-42EB-87E7-40BC9A70040B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BD9CC563-5D53-449A-9258-B4D940983ADB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD9CC563-5D53-449A-9258-B4D940983ADB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD9CC563-5D53-449A-9258-B4D940983ADB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD9CC563-5D53-449A-9258-B4D940983ADB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59AB7B77-52D6-4806-B265-5C6339D8D3A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59AB7B77-52D6-4806-B265-5C6339D8D3A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59AB7B77-52D6-4806-B265-5C6339D8D3A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59AB7B77-52D6-4806-B265-5C6339D8D3A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

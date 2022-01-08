@@ -6,6 +6,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fipc.ExampleServer", "Fipc.
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fipc.ExampleClient", "Fipc.ExampleClient\Fipc.ExampleClient.fsproj", "{DE429EAF-B833-42EB-87E7-40BC9A70040B}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Fipc.UnitTests", "Fipc.UnitTests\Fipc.UnitTests.fsproj", "{81D6DE13-853A-4EA0-ADA5-183F46E01ED7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE429EAF-B833-42EB-87E7-40BC9A70040B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{81D6DE13-853A-4EA0-ADA5-183F46E01ED7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{81D6DE13-853A-4EA0-ADA5-183F46E01ED7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{81D6DE13-853A-4EA0-ADA5-183F46E01ED7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{81D6DE13-853A-4EA0-ADA5-183F46E01ED7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

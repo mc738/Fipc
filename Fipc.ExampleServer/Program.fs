@@ -1,17 +1,33 @@
 // Learn more about F# at http://docs.microsoft.com/dotnet/fsharp
 
 open System
+open System.Security.Cryptography
 open Fipc.Core
-
-// Define a function to construct a message to print
-let from whom =
-    sprintf "from %s" whom
+open Fipc.Core.Common
 
 [<EntryPoint>]
 let main argv =
-    Server.start "testpipe" 4
+
+    let config = ({
+        Id = "example-server"
+        ChannelType = FipcChannelType.NamedPipe "testpipe"
+        MaxThreads = 1
+        ContentType = FipcContentType.Text
+    }: FipcConnectionConfiguration)
     
     
-    let message = from "F#" // Call the function
-    printfn "Hello world %s" message
+    let reader = Server.startHookServer config 
+    
+    let rec testLoop () =
+        match reader.TryReadMessage() with
+        | Some msg ->
+            match msg.Body with
+            | FipcMessageContent.Text t -> printfn $"Message: {t}"
+            | _ -> printfn $"Message type not supported yet."
+        | None -> printfn $"No messages."
+        Async.Sleep 1000 |> Async.RunSynchronously
+        testLoop ()
+    
+    printfn $"Starting server loop."
+    testLoop ()    
     0 // return an integer exit code

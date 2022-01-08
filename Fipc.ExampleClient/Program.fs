@@ -4,12 +4,27 @@ open System
 open System.IO.Pipes
 open System.Security.Principal
 open Fipc.Core
-
-// Define a function to construct a message to print
-let from whom =
-    sprintf "from %s" whom
+open Fipc.Core.Common
 
 [<EntryPoint>]
 let main argv =
-    Client.connection "testpipe"
+    
+    let config = ({
+        Id = "example-client"
+        ChannelType = FipcChannelType.NamedPipe "testpipe"
+        MaxThreads = 1
+        ContentType = FipcContentType.Text
+    }: FipcConnectionConfiguration)
+    
+    let writer = Client.startHookClient config
+    
+    let rec testLoop () =
+        match writer.TryPostMessage(FipcMessage.StringMessage($"Time now is {DateTime.Now}.")) with
+        | Ok _ -> ()
+        | Error e -> printfn $"{e}"
+        Async.Sleep 1000 |> Async.RunSynchronously
+        testLoop ()
+        
+    printfn $"Starting client loop."
+    testLoop ()
     0 // return an integer exit code

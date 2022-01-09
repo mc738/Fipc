@@ -5,6 +5,7 @@ open System.IO
 open System.IO.Pipes
 open System.Security.Principal
 open System.Threading
+open Fipc.Core.Common
 
 module NamedPipes =
 
@@ -31,9 +32,9 @@ module NamedPipes =
 
             pipeServer.Close()
 
-        let start name maxThreads (handlerFn: string -> Stream -> unit) =
+        let start configuration name (handlerFn: Stream -> unit) =
             let servers =
-                [ 0 .. (maxThreads - 1) ]
+                [ 0 .. (configuration.MaxThreads - 1) ]
                 |> List.map
                     (fun i ->
                         printfn $"Starting thread {i}"
@@ -41,7 +42,7 @@ module NamedPipes =
                         let thread =
                             Thread(
                                 ParameterizedThreadStart(
-                                    serverThread name PipeDirection.InOut maxThreads (handlerFn (i.ToString()))
+                                    serverThread name PipeDirection.InOut configuration.MaxThreads handlerFn
                                 )
                             )
 
@@ -65,8 +66,8 @@ module NamedPipes =
 
             loop (servers)
 
-        let startHookServer (name: string) contentType outputWriter maxThreads =
-            start name maxThreads (Hooks.serverHandler contentType outputWriter)
+        let startHookServer configuration (name: string) outputWriter =
+            start configuration name (Hooks.serverHandler configuration outputWriter)
 
     module Client =
 
@@ -85,5 +86,5 @@ module NamedPipes =
 
             handlerFn pipeClient
 
-        let startHookClient (name: string) inputReader id =
-            connection name (Hooks.clientHandler inputReader id) 
+        let startHookClient configuration (name: string) inputReader =
+            connection name (Hooks.clientHandler configuration inputReader) 

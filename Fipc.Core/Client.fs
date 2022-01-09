@@ -10,7 +10,7 @@ module Client =
         | FipcChannelType.NamedPipe name ->
             let background =
                 async {
-                    NamedPipes.Client.startHookClient name (connector.GetReader()) configuration.Id
+                    NamedPipes.Client.startHookClient configuration name (connector.GetReader()) 
                 }
 
             Async.Start background

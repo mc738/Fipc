@@ -26,16 +26,16 @@ module Operations =
                 | false -> Error "Magic bytes do not match."
             | Error e -> Error e
 
-    let tryReadMessage (id: string) (contentType: FipcContentType) (stream: Stream) =
-        printfn $"[{id}] Waiting for message."
+    let tryReadMessage (contentType: FipcContentType) (stream: Stream) =
+        printfn $"Waiting for message."
 
         match Internal.tryReadMagicBytes stream with
         | Ok _ ->
-            printfn $"[{id}] Message received."
+            printfn $"Message received."
 
             match Internal.tryReadMessageHeader stream with
             | Ok mh ->
-                printfn $"[{id}] Message header received: {mh}"
+                printfn $"Message header received: {mh}"
 
                 match stream.TryRead mh.Length, contentType with
                 | Ok buffer, FipcContentType.Text ->
@@ -56,11 +56,10 @@ module Operations =
                               |> FipcMessageContent.SerializedJson }
                 | Error e, _ -> Error e
             | Error e ->
-                printfn $"[{id}] Error: {e}"
                 Error e
-        | Error e -> Error $"[{id}] Magic bytes do not match. Error: {e}"
+        | Error e -> Error $"Magic bytes do not match. Error: {e}"
         
-    let tryWriteMessage (id: string) (stream: Stream) (message: FipcMessage) =
+    let tryWriteMessage (stream: Stream) (message: FipcMessage) =
         match stream.TryWrite(message.Serialize()) with
         | Ok _ -> Ok ()
-        | Error e -> Error $"[{id}] Error: {e}"
+        | Error e -> Error $"Error: {e}"

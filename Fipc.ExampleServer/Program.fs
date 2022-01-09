@@ -1,7 +1,6 @@
 // Learn more about F# at http://docs.microsoft.com/dotnet/fsharp
 
-open System
-open System.Security.Cryptography
+open System.Text
 open Fipc.Core
 open Fipc.Core.Common
 
@@ -13,6 +12,9 @@ let main argv =
         ChannelType = FipcChannelType.NamedPipe "testpipe"
         MaxThreads = 1
         ContentType = FipcContentType.Text
+        EncryptionType = FipcEncryptionType.None
+        CompressionType = FipcCompressionType.None
+        Key = Encoding.UTF8.GetBytes "Hello, World!"
     }: FipcConnectionConfiguration)
     
     

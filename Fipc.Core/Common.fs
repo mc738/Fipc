@@ -111,10 +111,29 @@ module Common =
     type FipcCorrelation = { Raw: byte array }
 
     [<RequireQualifiedAccess>]
+    type FipcConnectionType =
+        | Hook
+        | Stream
+        | Query
+        
+        static member FromByte(b: byte) =
+            match b with
+            | 1uy -> FipcConnectionType.Hook
+            | 2uy -> FipcConnectionType.Stream
+            | 3uy -> FipcConnectionType.Query
+            | _ -> failwith "Unknown connection type."
+            
+        member fct.ToByte() =
+            match fct with
+            | FipcConnectionType.Hook -> 1uy
+            | FipcConnectionType.Stream -> 2uy
+            | FipcConnectionType.Query -> 3uy
+    
+    [<RequireQualifiedAccess>]
     type FipcChannelType =
         | NamedPipe of string
         | Tcp
-
+        
     type FipcMessageHeader =
         { Length: int
           Correlation: FipcCorrelation }
@@ -159,15 +178,19 @@ module Common =
             | FipcMessageContent.Text t -> Encoding.UTF8.GetBytes t
             | FipcMessageContent.SerializedJson sj -> Encoding.UTF8.GetBytes sj
             | FipcMessageContent.Binary b -> b
-
+            
     type FipcMessage =
         { Header: FipcMessageHeader
           Body: FipcMessageContent }
 
-        static member Deserialize(data: byte array) =
+        
+        static member BytesMessage(data: byte array) =
+            let correlator = RandomNumberGenerator.GetBytes(8)
 
-
-            ()
+            { Header =
+                  { Length = data.Length
+                    Correlation = { Raw = correlator } }
+              Body = FipcMessageContent.Binary data }
 
         static member StringMessage(message: string) =
             // Serialize the message to get the length.
@@ -178,7 +201,8 @@ module Common =
                   { Length = sm.Length
                     Correlation = { Raw = correlator } }
               Body = FipcMessageContent.Text message }
-
+            
+        
         member msg.Serialize() =
             Array.concat [ msg.Header.Serialize()
                            msg.Body.Serialize() ]
@@ -215,4 +239,7 @@ module Common =
         { Id: string
           ChannelType: FipcChannelType
           MaxThreads: int
-          ContentType: FipcContentType }
+          ContentType: FipcContentType
+          EncryptionType: FipcEncryptionType
+          CompressionType: FipcCompressionType
+          Key: byte array }

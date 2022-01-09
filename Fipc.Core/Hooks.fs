@@ -9,13 +9,13 @@ open Fipc.Core.Common
 /// Much like http hooks.    
 module Hooks =
 
-    let clientHandler (inputChannel: FipcConnectionReader) (id: string) (stream: Stream) =
+    let clientHandler (configuration: FipcConnectionConfiguration) (inputChannel: FipcConnectionReader) (stream: Stream) =
         let rec loop () =
             // Try read the header.
             //match Operations.tr
             match inputChannel.TryReadMessage() with
             | Some msg ->
-                match Operations.tryWriteMessage id stream msg with
+                match Operations.tryWriteMessage stream msg with
                 | Ok _ -> ()
                 | Error e ->
                     // Log error.
@@ -24,14 +24,21 @@ module Hooks =
                 // No message to read attempt. Sleep for a bit to save some cylces.
                 Async.Sleep 100 |> Async.RunSynchronously
             loop ()
-        loop ()
+        match Handshake.clientHandler FipcConnectionType.Hook configuration stream with
+        | Ok _ ->
+            loop ()
+        | Error e -> failwith $"Handshake error: {e}"
         
-    let serverHandler (contentType: FipcContentType) (outputChannel: FipcConnectionWriter) (id: string)  (stream: Stream) =
+    let serverHandler (configuration: FipcConnectionConfiguration) (outputChannel: FipcConnectionWriter) (stream: Stream) =
         let rec loop() =
-            Operations.tryReadMessage id contentType stream
+            Operations.tryReadMessage configuration.ContentType stream
             |> Result.bind outputChannel.TryPostMessage
             |> ignore
             // Todo handle this.
             loop ()
-            
-        loop ()
+                        
+        match Handshake.serverHandler FipcConnectionType.Hook configuration stream with
+        | Ok _ ->
+            loop ()
+        | Error e -> failwith $"Handshake error: {e}"
+        

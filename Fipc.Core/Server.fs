@@ -13,13 +13,7 @@ module Server =
         match configuration.ChannelType with
         | FipcChannelType.NamedPipe name ->
             let background =
-                async {
-                    NamedPipes.Server.startHookServer
-                        name
-                        configuration.ContentType
-                        (connector.GetWriter())
-                        configuration.MaxThreads
-                }
+                async { NamedPipes.Server.startHookServer configuration name (connector.GetWriter()) }
 
             Async.Start background
         | FipcChannelType.Tcp -> failwith "Not implemented yet."

@@ -9,7 +9,6 @@
     <ItemGroup>
         <Compile Include="Common.fs" />
         <Compile Include="Operations.fs" />
-        <Compile Include="Library.fs" />
         <Compile Include="Handshake.fs" />
         <Compile Include="Hooks.fs" />
         <Compile Include="Streams.fs" />

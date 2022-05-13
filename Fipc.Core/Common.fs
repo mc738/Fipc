@@ -2,9 +2,13 @@
 
 open System
 open System.IO
+open System.IO.Pipes
+open System.Net
 open System.Net.Http
+open System.Net.Sockets
 open System.Security.Cryptography
 open System.Text
+open System.Text.Json
 open System.Threading.Channels
 
 [<AutoOpen>]
@@ -16,8 +20,11 @@ module Extensions =
             match stream.CanRead with
             | true ->
                 let buffer = Array.zeroCreate length
-                stream.Read(buffer, 0, length) |> ignore
-                Ok buffer
+                let i = stream.Read(buffer, 0, length) //|> ignore
+                //printfn $"*** {i}"
+                match i > 0 with
+                | true -> Ok buffer
+                | false -> Error "No more data"
             | false -> Error "Stream is not readable."
 
         member stream.TryReadString(length: int) =
@@ -42,6 +49,8 @@ module Common =
 
     let isMagicBytes (buffer: byte array) = buffer = magicBytes
 
+    let heartBeatCorr = [| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; |]
+    
     // Message layout.
     // Is wrong - update.
     // === Header ===
@@ -108,32 +117,68 @@ module Common =
             | FipcCompressionType.None -> 0uy
             | FipcCompressionType.GZip -> 1uy
 
-    type FipcCorrelation = { Raw: byte array }
+    type FipcCorrelation =
+        { Raw: byte array }
+
+        static member HeartBeat() = { Raw = heartBeatCorr }
+        
+        member fc.ToBase64() = fc.Raw |> Convert.ToBase64String
+        
+        member fc.IsHeartBeat() = fc.Raw = heartBeatCorr
 
     [<RequireQualifiedAccess>]
     type FipcConnectionType =
         | Hook
         | Stream
         | Query
-        
+
         static member FromByte(b: byte) =
             match b with
             | 1uy -> FipcConnectionType.Hook
             | 2uy -> FipcConnectionType.Stream
             | 3uy -> FipcConnectionType.Query
             | _ -> failwith "Unknown connection type."
-            
+
         member fct.ToByte() =
             match fct with
             | FipcConnectionType.Hook -> 1uy
             | FipcConnectionType.Stream -> 2uy
             | FipcConnectionType.Query -> 3uy
+
+    //[<RequireQualifiedAccess>]
+    //type FipcStream =
+    //    | NamedPipe of NamedPi
+
+    type TcpConnection = {
+        Address: IPAddress
+        Port: int
+    }
     
     [<RequireQualifiedAccess>]
     type FipcChannelType =
         | NamedPipe of string
-        | Tcp
-        
+        | Tcp of TcpConnection
+
+    [<RequireQualifiedAccess>]
+    type FipcStream =
+        | PipeServer of NamedPipeServerStream
+        | PipeClient of NamedPipeClientStream
+        | Network of NetworkStream
+
+        member fs.GetStream() =
+            match fs with
+            | PipeServer npss -> npss :> Stream
+            | PipeClient npcs -> npcs :> Stream
+            | Network ns -> ns :> Stream
+
+        member fs.IsConnected() =
+            match fs with
+            | PipeServer npss -> npss.IsConnected
+            | PipeClient npcs -> npcs.IsConnected
+            | Network ns ->
+                //ns.WriteByte(0uy)
+                ns.Socket.Connected
+
     type FipcMessageHeader =
         { Length: int
           Correlation: FipcCorrelation }
@@ -143,6 +188,10 @@ module Common =
             { Length = length
               Correlation = { Raw = correlation } }
 
+        static member HeartBeat(correlation: byte array) =
+            { Length = 0
+              Correlation = { Raw = correlation } }
+        
         static member TryParse(buffer: byte array, hasMagicBytes: bool) =
             let parse (headerBuffer: byte array) =
                 let len = BitConverter.ToInt32(headerBuffer, 0)
@@ -166,30 +215,41 @@ module Common =
             Array.concat [ magicBytes
                            BitConverter.GetBytes mh.Length
                            mh.Correlation.Raw ]
+        
+        member mh.IsHeartBeat() =
+            mh.Correlation.IsHeartBeat() && mh.Length = 0
 
     [<RequireQualifiedAccess>]
     type FipcMessageContent =
+        | Empty
         | Text of string
         | SerializedJson of string
         | Binary of byte array
 
         member fmc.Serialize() =
             match fmc with
+            | Empty -> Array.empty
             | FipcMessageContent.Text t -> Encoding.UTF8.GetBytes t
             | FipcMessageContent.SerializedJson sj -> Encoding.UTF8.GetBytes sj
             | FipcMessageContent.Binary b -> b
-            
+
     type FipcMessage =
         { Header: FipcMessageHeader
           Body: FipcMessageContent }
+
+        static member HeartBeat() =
+            let correlator = [| 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; 0uy; |]
+            
+            { Header = FipcMessageHeader.HeartBeat correlator
+              Body = FipcMessageContent.Empty }
 
         
         static member BytesMessage(data: byte array) =
             let correlator = RandomNumberGenerator.GetBytes(8)
 
             { Header =
-                  { Length = data.Length
-                    Correlation = { Raw = correlator } }
+                { Length = data.Length
+                  Correlation = { Raw = correlator } }
               Body = FipcMessageContent.Binary data }
 
         static member StringMessage(message: string) =
@@ -198,14 +258,26 @@ module Common =
             let correlator = RandomNumberGenerator.GetBytes(8)
 
             { Header =
-                  { Length = sm.Length
-                    Correlation = { Raw = correlator } }
+                { Length = sm.Length
+                  Correlation = { Raw = correlator } }
               Body = FipcMessageContent.Text message }
-            
-        
+
+        static member JsonMessage<'T>(data: 'T) =
+            let sd = JsonSerializer.Serialize data
+            let sm = sd |> Encoding.UTF8.GetBytes
+
+            let correlator = RandomNumberGenerator.GetBytes(8)
+
+            { Header =
+                { Length = sm.Length
+                  Correlation = { Raw = correlator } }
+              Body = FipcMessageContent.SerializedJson sd }
+
         member msg.Serialize() =
             Array.concat [ msg.Header.Serialize()
                            msg.Body.Serialize() ]
+            
+        member msg.IsHeartBeat() = msg.Header.IsHeartBeat()
 
     type FipcConnector =
         { Channel: Channel<FipcMessage> }

@@ -14,7 +14,7 @@
         <Compile Include="Streams.fs" />
         <Compile Include="Queries.fs" />
         <Compile Include="NamedPipes.fs" />
-        <Compile Include="InMemory.fs" />
+        <Compile Include="Tcp.fs" />
         <Compile Include="Server.fs" />
         <Compile Include="Client.fs" />
     </ItemGroup>

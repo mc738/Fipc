@@ -11,20 +11,21 @@ module Handshake =
         (configuration: FipcConnectionConfiguration)
         (stream: Stream)
         =
-        // Send config type + key (?)
-
+        
+        // Serialize the connection configuration.
         let serializedConfig =
             [| connectionType.ToByte()
                configuration.ContentType.ToByte()
                configuration.EncryptionType.ToByte()
                configuration.CompressionType.ToByte() |]
 
+        // Send the configuration, if the server matches a 0 is returned (in a message).
+        // Other values indicate mismatches.
         Array.concat [ serializedConfig; configuration.Key ]
         |> FipcMessage.BytesMessage
         |> Operations.tryWriteMessage stream
         |> Result.bind
             (fun _ ->
-                printfn "Sent "
                 // If the first message wrote ok, try read the response.
                 Operations.tryReadMessage FipcContentType.Bytes stream
                 |> Result.bind
@@ -44,6 +45,10 @@ module Handshake =
         (configuration: FipcConnectionConfiguration)
         (stream: Stream)
         =
+        
+        // Read the clients handshake, then compare the configuration and key.
+        // This is mainly to make sure both sides have the same set up, the might or might not be secure.
+        // The key is not used for encryption.
         Operations.tryReadMessage FipcContentType.Bytes stream
         |> Result.bind
             (fun m ->

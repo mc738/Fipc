@@ -27,15 +27,15 @@ module Operations =
             | Error e -> Error e
 
     let tryReadMessage (contentType: FipcContentType) (stream: Stream) =
-        printfn $"Waiting for message."
+        //printfn $"Waiting for message."
 
         match Internal.tryReadMagicBytes stream with
         | Ok _ ->
-            printfn $"Message received."
+            //printfn $"Message received."
 
             match Internal.tryReadMessageHeader stream with
             | Ok mh ->
-                printfn $"Message header received: {mh}"
+                //printfn $"Message header received: {mh}"
 
                 match stream.TryRead mh.Length, contentType with
                 | Ok buffer, FipcContentType.Text ->

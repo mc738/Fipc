@@ -18,6 +18,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Fipc.Core\Fipc.Core.fsproj" />
+      <ProjectReference Include="..\Fipc.Messaging\Fipc.Messaging.fsproj" />
     </ItemGroup>
 
 </Project>

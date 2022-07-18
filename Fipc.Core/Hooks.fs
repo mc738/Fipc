@@ -11,27 +11,34 @@ module Hooks =
 
     let clientHandler (configuration: FipcConnectionConfiguration) (inputChannel: FipcConnectionReader) (stream: FipcStream) =
         let s = stream.GetStream()
+        // Get a task representing the completion of the channel (i.e. no more messages).
+        // When complete it will close the client and end the stream.
+        let complete = inputChannel.GetCompletion()
         
         let rec loop (i: int) =
-            // Try read the header.
-            //match Operations.tr
+            let cont i =
+                match complete.IsCompleted || complete.IsCanceled with
+                | true -> ()
+                | false -> loop(i)
+     
             match inputChannel.TryReadMessage() with
             | Some msg ->
                 match Operations.tryWriteMessage s msg with
-                | Ok _ -> loop (0)
+                | Ok _ -> cont 0
                 | Error e ->
                     // Log error.
-                    loop (i + 1)
+                    cont (i + 1)
             | None ->
-                // No message to read attempt. Sleep for a bit to save some cylecs.
-                Async.Sleep 100 |> Async.RunSynchronously
-                // Send heartbeat
-                match i >= 50 with
-                | true -> loop (0)
-                    //match Operations.tryWriteMessage s (FipcMessage.HeartBeat()) with
-                    //| Ok _ -> loop (0)
-                    //| Error e -> loop (i + 1)
-                | false -> loop (i + 1)
+                    // No message to read attempt. Sleep for a bit to save some cylecs.
+                    Async.Sleep 100 |> Async.RunSynchronously
+                    // Send heartbeat
+                    match i >= 50 with
+                    | true ->
+                        cont (0)
+                        //match Operations.tryWriteMessage s (FipcMessage.HeartBeat()) with
+                        //| Ok _ -> loop (0)
+                        //| Error e -> loop (i + 1)
+                    | false -> cont (i + 1)
 
         match Handshake.clientHandler FipcConnectionType.Hook configuration s with
         | Ok _ ->
@@ -55,7 +62,6 @@ module Hooks =
                 //    stream :?>
             with
             | exn -> printfn $"Exn: {exn.Message}"
-            
             
             //stream.
             if stream.IsConnected() then loop ()

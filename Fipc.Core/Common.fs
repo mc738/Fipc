@@ -164,7 +164,13 @@ module Common =
         | PipeServer of NamedPipeServerStream
         | PipeClient of NamedPipeClientStream
         | Network of NetworkStream
-
+ 
+        member fs.Close() =
+            match fs with
+            | PipeServer npss -> npss.Close()
+            | PipeClient npcs -> npcs.Close()
+            | _ -> ()
+        
         member fs.GetStream() =
             match fs with
             | PipeServer npss -> npss :> Stream
@@ -282,6 +288,7 @@ module Common =
     type FipcConnector =
         { Channel: Channel<FipcMessage> }
 
+        
         static member Create() =
             { Channel = Channel.CreateUnbounded<FipcMessage>() }
 
@@ -292,20 +299,31 @@ module Common =
     and FipcConnectionReader =
         private
             { ChannelReader: ChannelReader<FipcMessage> }
-
+        
         member fcw.TryReadMessage() =
             match fcw.ChannelReader.TryRead() with
             | true, msg -> Some msg
             | false, _ -> None
+            
+        member fcw.GetCompletion() = fcw.ChannelReader.Completion
 
     and FipcConnectionWriter =
         private
             { ChannelWriter: ChannelWriter<FipcMessage> }
 
+        
+        interface IDisposable with
+            
+            member fcw.Dispose() =
+                fcw.Close()
+        
         member fcw.TryPostMessage(message: FipcMessage) =
             match fcw.ChannelWriter.TryWrite message with
             | true -> Ok()
             | false -> Error "Failed to post message."
+            
+        member fcw.Close() =
+            fcw.ChannelWriter.Complete()
 
     type FipcConnectionConfiguration =
         { Id: string
